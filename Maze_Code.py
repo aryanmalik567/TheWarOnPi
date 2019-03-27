@@ -1,38 +1,67 @@
-import time
 import RPi.GPIO as IO
 from Classes.Ultrasound import *
 from Classes.Movement import *
+import time as t
 
 speed = 100
-threshold = 20
+sThreshold = int(input('Side Threshold: '))
+fThreshold = int(input('Front Threshold: '))
 m = Movement()
+IO.setmode(IO.BCM)
 
-GPIO.setmode(GPIO.BCM)
+Trigger = 17
+l_Echo = 2
+r_Echo = 3
+f_Echo = 4
 
-l_Trigger = 0
-l_Echo = 0
-r_Trigger = 0
-l_Echo = 0
-f_Trigger = 0
-f_Echo = 0
-
-IO.setup(l_Trigger, IO.OUT)
+IO.setup(Trigger, IO.OUT)
 IO.setup(l_Echo, IO.IN)
-IO.setup(r_Trigger, IO.OUT)
 IO.setup(r_Echo, IO.IN)
-IO.setup(f_Trigger, IO.OUT)
 IO.setup(f_Echo, IO.IN)
 
-l = distance(l_Trigger,l_Echo)    # need to add arguments to Ultrasound class
-r = distance(r_Trigger,r_Echo)
-f = distance(f_Trigger,f_Echo)
-
+timetoturn90 = 2 # WILL NEED TO BE CHANGED ON DAY IF USED
+a = 0
+x=0
+avef=0
+aveb=0
+avel=0
+aver=0
+n=0
 while True:
-  if f < threshold and r > threshold and l < threshold:
-    m.turn('r','0',speed)
-  elif f < threshold and r < threshold and l > threshold:
-    m.turn('l','0',speed)
-  elif f < threshold and r > threshold and l > threshold:
-    m.turn('r','0',speed)
+  l,r,f = distance(Trigger,l_Echo),distance(Trigger,r_Echo),distance(Trigger,f_Echo)
+  x+=1
+  n+=1
+  if n==10:
+    avef=0
+    aveb=0
+    avel=0
+    aver=0
+    n=0
+  if x==30:
+      x=0
+      print(f,l,r, a)
+  if f > fThreshold :
+    avef+=1
+    if a!=1 and avef>8:
+      m.forward(speed,0,0)
+      a = 1
+  elif r < sThreshold and l > sThreshold:
+    avel+=1
+    if a!=2 and avel>9:
+      m.turn('l',0,speed)
+      a=2
+  elif r > sThreshold and l < sThreshold:
+    aver+=1
+    if a!=3 and aver>8:
+      m.turn('r',0,speed)
+      a=3
+  elif r > l:
+    aver+=1
+    if a!=3 and aver>8:
+      m.turn('r', 0, speed)
+      a=3
   else:
-    m.forward(speed,0,1)
+    avel+=1
+    if a!=2 and avel>8:
+      m.turn('l',0,speed)
+      a=2
